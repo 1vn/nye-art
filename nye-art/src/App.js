@@ -143,8 +143,14 @@ class App extends Component {
 				id: firstVid.id,
 				start: Math.floor(Math.random() * firstVid.max)
 			},
-			videoOpacity: 1
+			videoOpacity: 1,
+			countDownInterval: {},
+			videoInterval: {},
 		}
+
+		this.skipVideo = this.skipVideo.bind(this);
+		this.randVideo = this.randVideo.bind(this);
+		this.countdown = this.countdown.bind(this);
 	}
 
 	getTimeRemaining(endtime){
@@ -162,40 +168,51 @@ class App extends Component {
 		};
 	}
 
-	componentDidMount(){
-		let videoInterval = setInterval(() => {
-			//choose random video
-			const rand = videos[Math.floor(Math.random() * videos.length)];
+	countdown() {
+		let time = this.getTimeRemaining(deadline);
 
-			//choose random time
-			const time = Math.floor(Math.random() * rand.max);
-			this.setState({
-				video: {
-					id: rand.id,
-					start: time
-				}
-			});
+		let opacity = 1
+		if(time.hours === 0){
+			opacity = 1 * (time.minutes/60 + time.seconds)/100;				
+		}
+		
+		this.setState({
+			time: time,
+			videoOpacity: opacity
+		})
 
-		}, 60  * 1000)
+		if(time.hours === 0 && time.minutes === 0 && time.seconds === 0){
+			clearInterval(this.state.countDownInterval);
+			clearInterval(this.state.videoInterval);
+		}
+	}
 
-		let countDownInterval = setInterval(() => {
-			let time = this.getTimeRemaining(deadline);
-
-			let opacity = 1
-			if(time.hours === 0){
-				opacity = 1 * (time.minutes/60 + time.seconds)/100;				
+	randVideo() {
+		//choose random video
+		const rand = videos[Math.floor(Math.random() * videos.length)];
+		console.log(rand)
+		//choose random time
+		const time = Math.floor(Math.random() * rand.max);
+		this.setState({
+			video: {
+				id: rand.id,
+				start: time
 			}
-			
-			this.setState({
-				time: time,
-				videoOpacity: opacity
-			})
+		});
+	}
 
-			if(time.hours === 0 && time.minutes === 0 && time.seconds === 0){
-				clearInterval(countDownInterval);
-				clearInterval(videoInterval);
-			}
-		}, 500);
+	componentDidMount() {
+		this.setState({
+			videoInterval: setInterval(this.randVideo(), 15 * 1000), 
+			countDownInterval: setInterval(this.randVideo(), 500),
+		})
+	}
+
+	skipVideo() {
+		clearInterval(this.state.videoInterval);
+		this.setState({
+			videoInterval: setInterval(this.randVideo(), 15 * 1000)
+		})
 	}
 
 	render() {
@@ -204,17 +221,19 @@ class App extends Component {
 			<div className="App">
 				<VideoPlayer video={this.state.video} opacity={this.state.videoOpacity}/>
 				<div 
+					onClick={this.skipVideo}
 					style={{
+						width: "100%",
 						position: "absolute",
 						zIndex: 99,
-						top: "45%",
-						left: "35%",
+						top: "55%",
 						color: "white"
 					}}>
 					<div style={{
+						width: 125,
+						margin: "0 auto",
 						background: "#000000",
-						padding: 10,
-						fontSize: 90,
+						padding: 12,
 					}}>
 						<div>"{this.state.video.id}"</div>
 						<CountdownTimer time={time} />
